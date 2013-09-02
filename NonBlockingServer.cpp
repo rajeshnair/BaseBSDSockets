@@ -11,6 +11,10 @@
 #include <map>
 #include <list>
 
+#ifdef _GUARDIAN_TARGET
+#include </G/system/system/cextdecs(FILE_CLOSE_)>
+#endif
+
 using namespace std;
 
 class NonBlockingServer {
@@ -46,7 +50,9 @@ class NonBlockingServer {
 			bool continueServing = true;
 			do
 			{
-				int connfd = accept(listenfd, (struct sockaddr*)NULL, NULL); 
+				struct sockaddr_in clientaddr;
+				socklen_t addrlen;	
+				int connfd = accept(listenfd, (struct sockaddr*)&clientaddr, &addrlen); 
 				if(connfd < 0 && (errno != EAGAIN && errno != EWOULDBLOCK ))
 				{	
 					printf("Failed with return status %d, errno %d",connfd, errno);
@@ -54,7 +60,6 @@ class NonBlockingServer {
 				}	
 				else if(connfd > 0)
 				{
-					printf("\nStep 3");
 					clientConnFdList.push_back(connfd);				
 					setNonblocking(connfd);
 				}
@@ -74,17 +79,26 @@ class NonBlockingServer {
 				{
 					int localConnFd = it->first;
 					string requestString = it->second;
-					std::cout<< "'" <<requestString<< "'"<<std::endl;
 					if(requestString.compare(0,4,"STOP") ==0)
 					{
-						close(listenfd);		
+#ifdef _GUARDIAN_TARGET
+						FILE_CLOSE_((short)(listenfd));		
+#else
+						close(listenfd);					
+#endif
+						
+												
 						continueServing = false;
 						return;
 					}
 					int resp = romanToInt(requestString);	
 					snprintf(sendBuff, sizeof(sendBuff), "%d\r\n", resp);
-					write(localConnFd, sendBuff, strlen(sendBuff)); 
-					close(localConnFd);
+					ssize_t wrtbytes = send(localConnFd, sendBuff, strlen(sendBuff),0); 
+#ifdef _GUARDIAN_TARGET
+					FILE_CLOSE_((short)localConnFd);
+#else
+					close(localConnFd);	
+#endif					
 
 					requestMap.erase(it++);
 					clientConnFdList.remove(localConnFd);
