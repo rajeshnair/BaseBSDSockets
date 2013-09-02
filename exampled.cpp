@@ -29,6 +29,7 @@ To terminate:	kill `cat /tmp/exampled.lock`
 #include <map>
 #include <sys/types.h>
 #include <time.h> 
+#include <iostream>
 
 #ifdef _GUARDIAN_TARGET
 #include </G/system/system/cextdecs(FILE_CLOSE_)>
@@ -38,6 +39,11 @@ To terminate:	kill `cat /tmp/exampled.lock`
 #define LOCK_FILE	"exampled.lock"
 #define LOG_FILE	"exampled.log"
 using namespace std;
+
+#define STAT_REQUEST_INTERVAL 10000
+
+long requestCount; 
+time_t lastStatTime;
 
 void log_message(char *filename, char* message)
 {
@@ -84,6 +90,20 @@ int romanToInt(string s) {
     return res;
 }
 
+void printStat()
+{
+	requestCount++;
+	if(requestCount == STAT_REQUEST_INTERVAL )
+	{
+		time_t now = time(NULL);
+		long diffsec = now - lastStatTime;
+		float throughput = ((float)requestCount) / ((float)diffsec);
+		std::cout <<"Throughput : "<<throughput <<std::endl;
+
+		requestCount = 0;
+		lastStatTime = now;
+	}
+}
 
 void startServer()
 {
@@ -104,7 +124,9 @@ void startServer()
 
     bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)); 
     listen(listenfd, 10); 
-
+		
+	requestCount = 0;
+	lastStatTime = time(NULL);
     do
     {
         connfd = accept(listenfd, (struct sockaddr*)NULL, NULL); 
@@ -123,6 +145,7 @@ void startServer()
 #else		
         close(connfd);
 #endif		
+		printStat();
     }while(true);
 }
 

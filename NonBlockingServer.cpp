@@ -15,6 +15,8 @@
 #include </G/system/system/cextdecs(FILE_CLOSE_)>
 #endif
 
+#define STAT_REQUEST_INTERVAL 10000
+
 using namespace std;
 
 class NonBlockingServer {
@@ -22,6 +24,8 @@ class NonBlockingServer {
 		NonBlockingServer (int port)
 		:m_port(port)
 		{
+			requestCount =0;
+			lastStatTime = time(NULL);
 		}
 		virtual ~NonBlockingServer ()
 		{
@@ -102,11 +106,28 @@ class NonBlockingServer {
 
 					requestMap.erase(it++);
 					clientConnFdList.remove(localConnFd);
+					printStat();
 				}
+				
+
 			}while(continueServing);
 		}
 	private:
+		void printStat()
+		{
+			requestCount++;
+			if(requestCount == STAT_REQUEST_INTERVAL )
+			{
+				time_t now = time(NULL);
+				long diffsec = now - lastStatTime;
+				float throughput = ((float)requestCount) / ((float)diffsec);
+				std::cout <<"Throughput : "<<throughput <<std::endl;
 
+				requestCount = 0;
+				lastStatTime = now;
+			}
+		}
+	
 		int setNonblocking(int fd)
 		{
 			int flags;
@@ -144,6 +165,11 @@ class NonBlockingServer {
 			res += roman[s[s.size()-1]];
 			return res;
 		}
+
+		long requestCount;
+		time_t lastStatTime;
+		
+
 		short int m_port;	
 		int listenfd;
 		struct sockaddr_in serv_addr; 

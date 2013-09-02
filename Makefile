@@ -44,6 +44,10 @@ nbserv: NonBlockingServer.cpp
 bserv: exampled.cpp
 	$(CC) -o $@ ${INCS} ${OPTS} $?
 
+client: TestClient.cpp
+	$(CC) -o $@ ${INCS} ${OPTS} $?
+
 clean:
 	rm -rf bserv bserv.dSYM/
+	rm -rf client client.dSYM/
 	rm -rf nbserv nbserv.dSYM/	
