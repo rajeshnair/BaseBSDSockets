@@ -70,6 +70,6 @@ int main(int argc, char *argv[])
 
 		close(sockfd);
 
-	}while( k++ < 100000);
+	}while( k++ < 10000000);
     return 0;
 }

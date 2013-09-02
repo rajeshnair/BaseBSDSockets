@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string>
+#include <cstring>
 #include <sys/types.h>
 #include <map>
 #include <list>
@@ -15,7 +16,7 @@
 #include </G/system/system/cextdecs(FILE_CLOSE_)>
 #endif
 
-#define STAT_REQUEST_INTERVAL 10000
+#define STAT_REQUEST_INTERVAL 1000000
 
 using namespace std;
 

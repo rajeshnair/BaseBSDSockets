@@ -40,7 +40,7 @@ To terminate:	kill `cat /tmp/exampled.lock`
 #define LOG_FILE	"exampled.log"
 using namespace std;
 
-#define STAT_REQUEST_INTERVAL 10000
+#define STAT_REQUEST_INTERVAL 1000000
 
 long requestCount; 
 time_t lastStatTime;
