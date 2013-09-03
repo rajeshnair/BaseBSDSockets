@@ -110,6 +110,7 @@ class NonBlockingServer {
 					printStat();
 				}
 				
+				usleep(1000);	
 
 			}while(continueServing);
 		}

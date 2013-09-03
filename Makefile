@@ -47,6 +47,10 @@ bserv: exampled.cpp
 client: TestClient.cpp
 	$(CC) -o $@ ${INCS} ${OPTS} $?
 
+sel: SelectServer.cpp
+	$(CC) -o $@ ${INCS} ${OPTS} $?
+
+
 clean:
 	rm -rf bserv bserv.dSYM/
 	rm -rf client client.dSYM/
