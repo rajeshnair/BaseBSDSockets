@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -9,6 +10,7 @@
 #include <string>
 #include <cstring>
 #include <sys/types.h>
+#include <sys/ioctl.h>
 #include <map>
 #include <list>
 
@@ -16,7 +18,7 @@
 #include </G/system/system/cextdecs(FILE_CLOSE_)>
 #endif
 
-#define STAT_REQUEST_INTERVAL 1000000
+#define STAT_REQUEST_INTERVAL 1000
 
 using namespace std;
 
@@ -42,7 +44,12 @@ class NonBlockingServer {
 			serv_addr.sin_port = htons(m_port); 
 
 			bind(listenfd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)); 
-			setNonblocking(listenfd);
+			int rc =setNonblocking(listenfd);
+			if(rc < 0)
+			{
+				perror("No Nonblocking");
+				exit(1);
+			}
 			listen(listenfd, 10); 
 
 		}
@@ -57,6 +64,7 @@ class NonBlockingServer {
 			{
 				struct sockaddr_in clientaddr;
 				socklen_t addrlen;	
+				printf("Going to call accept() \n ");
 				int connfd = accept(listenfd, (struct sockaddr*)&clientaddr, &addrlen); 
 				if(connfd < 0 && (errno != EAGAIN && errno != EWOULDBLOCK ))
 				{	
@@ -68,6 +76,7 @@ class NonBlockingServer {
 					clientConnFdList.push_back(connfd);				
 					setNonblocking(connfd);
 				}
+				printf("accept() returned \n");
 
 
 				for (std::list<int>::iterator it = clientConnFdList.begin(); it != clientConnFdList.end(); it++)
@@ -110,7 +119,6 @@ class NonBlockingServer {
 					printStat();
 				}
 				
-				usleep(1000);	
 
 			}while(continueServing);
 		}
@@ -135,7 +143,8 @@ class NonBlockingServer {
 			int flags;
 
 			/* If they have O_NONBLOCK, use the Posix way to do it */
-#if defined(O_NONBLOCK)
+#if defined(O_NONBLOCK) 
+/*#if 0 */
 			if (-1 == (flags = fcntl(fd, F_GETFL, 0)))
 				flags = 0;
 			return fcntl(fd, F_SETFL, flags | O_NONBLOCK);

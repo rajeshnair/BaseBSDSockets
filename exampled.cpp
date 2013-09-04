@@ -40,7 +40,7 @@ To terminate:	kill `cat /tmp/exampled.lock`
 #define LOG_FILE	"exampled.log"
 using namespace std;
 
-#define STAT_REQUEST_INTERVAL 1000000
+#define STAT_REQUEST_INTERVAL 1000
 
 long requestCount; 
 time_t lastStatTime;
@@ -128,25 +128,27 @@ void startServer()
 	requestCount = 0;
 	lastStatTime = time(NULL);
     do
-    {
-        connfd = accept(listenfd, (struct sockaddr*)NULL, NULL); 
+	{
+		struct sockaddr_in clientaddr;
+		socklen_t addrlen;	
+		connfd = accept(listenfd, (struct sockaddr*)&clientaddr, &addrlen); 
 		if(connfd < 0)
 			printf("Failed with return status %d, errno %d",connfd, errno);
-		
+
 		int nrcvd = recv(connfd, recvBuff, 4, 0 );
-		
+
 		string numStr(recvBuff,0,nrcvd);
 		int resp = romanToInt(numStr);	
 		snprintf(sendBuff, sizeof(sendBuff), "%d\r\n", resp);
-        send(connfd, sendBuff, strlen(sendBuff),0); 
-		
+		send(connfd, sendBuff, strlen(sendBuff),0); 
+
 #ifdef _GUARDIAN_TARGET
 		FILE_CLOSE_((short)connfd);
 #else		
-        close(connfd);
+		close(connfd);
 #endif		
 		printStat();
-    }while(true);
+	}while(true);
 }
 
 main()

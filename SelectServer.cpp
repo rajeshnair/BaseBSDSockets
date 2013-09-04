@@ -6,11 +6,33 @@
 #include <netinet/in.h>
 #include <errno.h>
 #include <string>
+#include <string.h>
+#include <fcntl.h>
 
 #define SERVER_PORT  12345
 
 #define TRUE             1
 #define FALSE            0
+
+#ifdef _GUARDIAN_TARGET
+#include </G/system/system/cextdecs(FILE_CLOSE_)>
+#endif
+
+int setNonblocking(int fd)
+{
+			int flags;
+
+			/* If they have O_NONBLOCK, use the Posix way to do it */
+#if defined(O_NONBLOCK)
+			if (-1 == (flags = fcntl(fd, F_GETFL, 0)))
+				flags = 0;
+			return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+#else
+			/* Otherwise, use the old way of doing it */
+			flags = 1;
+			return ioctl(fd, FIOBIO, &flags);
+#endif
+}
 
 main (int argc, char *argv[])
 {
@@ -42,7 +64,11 @@ main (int argc, char *argv[])
    if (rc < 0)
    {
       perror("setsockopt() failed");
+#ifdef _GUARDIAN_TARGET
+	  FILE_CLOSE_((short)(listen_sd));		
+#else
       close(listen_sd);
+#endif
       exit(-1);
    }
 
@@ -51,11 +77,15 @@ main (int argc, char *argv[])
    /* the incoming connections will also be non-blocking since  */
    /* they will inherit that state from the listening socket.   */
    /*************************************************************/
-   rc = ioctl(listen_sd, FIONBIO, (char *)&on);
+   rc = setNonblocking(listen_sd);
    if (rc < 0)
    {
       perror("ioctl() failed");
+#ifdef _GUARDIAN_TARGET
+	FILE_CLOSE_((short)(listen_sd));		
+#else
       close(listen_sd);
+#endif
       exit(-1);
    }
 
@@ -71,7 +101,11 @@ main (int argc, char *argv[])
    if (rc < 0)
    {
       perror("bind() failed");
+#ifdef _GUARDIAN_TARGET
+	FILE_CLOSE_((short)(listen_sd));		
+#else
       close(listen_sd);
+#endif
       exit(-1);
    }
 
@@ -82,7 +116,11 @@ main (int argc, char *argv[])
    if (rc < 0)
    {
       perror("listen() failed");
+#ifdef _GUARDIAN_TARGET
+						FILE_CLOSE_((short)(listen_sd));		
+#else
       close(listen_sd);
+#endif
       exit(-1);
    }
 
@@ -176,7 +214,9 @@ main (int argc, char *argv[])
                   /* failure on accept will cause us to end the */
                   /* server.                                    */
                   /**********************************************/
-                  new_sd = accept(listen_sd, NULL, NULL);
+				struct sockaddr_in clientaddr;
+				socklen_t addrlen;	
+                  new_sd = accept(listen_sd, (struct sockaddr*)&clientaddr, &addrlen);
                   if (new_sd < 0)
                   {
                      if (errno != EWOULDBLOCK)
@@ -275,7 +315,11 @@ main (int argc, char *argv[])
                /*************************************************/
                if (close_conn)
                {
+#ifdef _GUARDIAN_TARGET
+			      FILE_CLOSE_((short)(i));		
+#else
                   close(i);
+#endif
                   FD_CLR(i, &master_set);
                   if (i == max_sd)
                   {
@@ -295,6 +339,10 @@ main (int argc, char *argv[])
    for (i=0; i <= max_sd; ++i)
    {
       if (FD_ISSET(i, &master_set))
+#ifdef _GUARDIAN_TARGET
+						FILE_CLOSE_((short)(i));		
+#else
          close(i);
+#endif
    }
 }
